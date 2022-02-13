@@ -1,0 +1,17 @@
+{
+	"name": "CreateUser",
+	"properties": {
+		"content": {
+			"query": "CREATE USER [wb1158@outlook.com] FROM EXTERNAL PROVIDER;\n\nEXEC sp_addrolemember 'db_exporter', 'wb1158@outlook.com';",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "SQLPool01",
+				"poolName": "SQLPool01"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
