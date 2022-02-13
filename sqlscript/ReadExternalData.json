@@ -1,0 +1,17 @@
+{
+	"name": "ReadExternalData",
+	"properties": {
+		"content": {
+			"query": "SELECT top 100 *\nFROM  \nOPENROWSET(\n    BULK 'https://pandemicdatalake.blob.core.windows.net/public/curated/covid-19/covid_tracking/latest/covid_tracking.parquet',\n    FORMAT='PARQUET'\n) t",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

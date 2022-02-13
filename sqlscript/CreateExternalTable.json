@@ -1,0 +1,17 @@
+{
+	"name": "CreateExternalTable",
+	"properties": {
+		"content": {
+			"query": "IF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseParquetFormat') \n\tCREATE EXTERNAL FILE FORMAT [SynapseParquetFormat] \n\tWITH ( FORMAT_TYPE = PARQUET)\nGO\n\nIF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'public_pandemicdatalake_blob_core_windows_net') \n\tCREATE EXTERNAL DATA SOURCE [public_pandemicdatalake_blob_core_windows_net] \n\tWITH (\n\t\tLOCATION   = 'https://pandemicdatalake.blob.core.windows.net/public', \n\t)\nGo\n\nCREATE EXTERNAL TABLE dbo.COVID_TRACKING (\n\t[date] date,\n\t[state] varchar(8000),\n\t[positive] int,\n\t[negative] int,\n\t[pending] smallint,\n\t[hospitalized_currently] smallint,\n\t[hospitalized_cumulative] int,\n\t[in_icu_currently] smallint,\n\t[in_icu_cumulative] smallint,\n\t[on_ventilator_currently] smallint,\n\t[on_ventilator_cumulative] smallint,\n\t[recovered] int,\n\t[data_quality_grade] varchar(8000),\n\t[last_update_et] datetime2(7),\n\t[hash] varchar(8000),\n\t[date_checked] varchar(8000),\n\t[death] smallint,\n\t[hospitalized] int,\n\t[total] int,\n\t[total_test_results] int,\n\t[pos_neg] int,\n\t[fips] smallint,\n\t[death_increase] smallint,\n\t[hospitalized_increase] smallint,\n\t[negative_increase] int,\n\t[positive_increase] smallint,\n\t[total_test_results_increase] int,\n\t[fips_code] varchar(8000),\n\t[iso_subdivision] varchar(8000),\n\t[load_time] datetime2(7),\n\t[iso_country] varchar(8000)\n\t)\n\tWITH (\n\tLOCATION = 'curated/covid-19/covid_tracking/latest/covid_tracking.parquet',\n\tDATA_SOURCE = [public_pandemicdatalake_blob_core_windows_net],\n\tFILE_FORMAT = [SynapseParquetFormat]\n\t)\nGO\n\nSELECT TOP 100 * FROM dbo.COVID_TRACKING\nGO\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "SQLPool02",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
