@@ -17,7 +17,7 @@
 				"spark.dynamicAllocation.enabled": "false",
 				"spark.dynamicAllocation.minExecutors": "2",
 				"spark.dynamicAllocation.maxExecutors": "2",
-				"spark.autotune.trackingId": "35080dd6-4ff3-49f3-9257-fea08964202f"
+				"spark.autotune.trackingId": "6ea70e8f-895b-4459-9d47-5a053288a13e"
 			}
 		},
 		"metadata": {
@@ -61,6 +61,7 @@
 				"source": [
 					"%%spark\r\n",
 					"\r\n",
+					"// read data from dedicated sql pool\r\n",
 					"import com.microsoft.spark.sqlanalytics.utils.Constants\r\n",
 					"import org.apache.spark.sql.SqlAnalyticsConnector._\r\n",
 					"\r\n",
@@ -68,6 +69,55 @@
 					"dfTmp.createTempView(\"COVID_TRACKING\")"
 				],
 				"execution_count": 7
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": true
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"collapsed": false
+				},
+				"source": [
+					"# read data from Azure Storage\r\n",
+					"blob_account_name = \"pandemicdatalake\"\r\n",
+					"blob_container_name = \"public\"\r\n",
+					"blob_relative_path = \"curated/covid-19/covid_tracking/latest/covid_tracking.parquet\"\r\n",
+					"blob_sas_token = r\"\"\r\n",
+					"# Allow SPARK to read from Blob remotely\r\n",
+					"wasbs_path = 'wasbs://%s@%s.blob.core.windows.net/%s' % (blob_container_name, blob_account_name, blob_relative_path)\r\n",
+					"\r\n",
+					"spark.conf.set(\r\n",
+					"    'fs.azure.sas.%s.%s.blob.core.windows.net' % (blob_container_name, blob_account_name),\r\n",
+					"    blob_sas_token)\r\n",
+					"df = spark.read.parquet(wasbs_path)\r\n",
+					"display(df.limit(10))"
+				],
+				"execution_count": 17
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"df.createOrReplaceTempView(\"covid_tracking\")"
+				],
+				"execution_count": 18
 			},
 			{
 				"cell_type": "code",
@@ -89,9 +139,9 @@
 				"source": [
 					"%%sql\r\n",
 					"\r\n",
-					"select * from COVID_TRACKING;"
+					"select * from covid_tracking;"
 				],
-				"execution_count": 9
+				"execution_count": 19
 			},
 			{
 				"cell_type": "code",
@@ -109,18 +159,59 @@
 				},
 				"source": [
 					"from pyspark.sql import SparkSession\r\n",
-					"from pyspark.sql import types\r\n",
-					"from pyspark.sql import functions\r\n",
+					"from pyspark.sql.types import *\r\n",
+					"from pyspark.sql.functions import *\r\n",
 					"\r\n",
 					"# dfCovidTracking = spark.sql(\"SELECT * FROM COVID_TRACKING\")\r\n",
-					"dfCovidTracking = sqlContext.table('COVID_TRACKING')\r\n",
+					"dfCovidTracking = sqlContext.table('covid_tracking')\r\n",
 					"# display(dfCovidTracking.limit(10))\r\n",
 					"dfAgg = (\r\n",
-					"    dfCovidTracking.groupBy([\"date\", \"state\"]).agg(sum(\"positive\").alias(\"total_positive\"))\r\n",
+					"    dfCovidTracking.groupBy(\"date\", \"state\").agg(sum(\"positive\").alias(\"total_positive\"))\r\n",
 					")\r\n",
 					"display(dfAgg.limit(10))"
 				],
-				"execution_count": 14
+				"execution_count": 20
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"dfAgg.createTempView(\"covid_agg\")"
+				],
+				"execution_count": 22
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": true
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					},
+					"microsoft": {
+						"language": "sparksql"
+					},
+					"collapsed": false
+				},
+				"source": [
+					"%%sql\r\n",
+					"select * from covid_agg"
+				],
+				"execution_count": 24
 			},
 			{
 				"cell_type": "code",
@@ -141,9 +232,11 @@
 				"source": [
 					"%%spark\r\n",
 					"\r\n",
-					"// df.write.sqlanalytics(\"SQLPool01.dbo.TopCovidStates\", Constants.INTERNAL)"
+					"//write df to dedicated sql pool\r\n",
+					"val dfAgg = spark.sqlContext.sql(\"select * from covid_agg\")\r\n",
+					"dfAgg.write.sqlanalytics(\"SQLPool01.dbo.CovidAgg\", Constants.INTERNAL)"
 				],
-				"execution_count": null
+				"execution_count": 25
 			},
 			{
 				"cell_type": "code",
@@ -162,74 +255,6 @@
 					"# new_rows = [('CA',22, 45000),(\"WA\",35,65000) ,(\"WA\",50,85000)]\r\n",
 					"# demo_df = spark.createDataFrame(new_rows, ['state', 'age', 'salary'])\r\n",
 					"# demo_df.show()"
-				],
-				"execution_count": null
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					"from azureml.opendatasets import NycTlcYellow\r\n",
-					"\r\n",
-					"data = NycTlcYellow()\r\n",
-					"data_df = data.to_spark_dataframe()\r\n",
-					"display(data_df.limit(10))"
-				],
-				"execution_count": 15
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					},
-					"microsoft": {
-						"language": "scala"
-					}
-				},
-				"source": [
-					"%%spark\r\n",
-					"\r\n",
-					"import com.microsoft.spark.sqlanalytics.utils.Constants\r\n",
-					"import org.apache.spark.sql.SqlAnalyticsConnector._\r\n",
-					"\r\n",
-					"spark.sql(\"CREATE DATABASE IF NOT EXISTS nyctaxi\")\r\n",
-					"val df = spark.read.sqlanalytics(\"SQLPOOL1.dbo.Trip\") \r\n",
-					"df.write.mode(\"overwrite\").saveAsTable(\"nyctaxi.trip\")"
-				],
-				"execution_count": null
-			},
-			{
-				"cell_type": "code",
-				"metadata": {
-					"jupyter": {
-						"source_hidden": false,
-						"outputs_hidden": false
-					},
-					"nteract": {
-						"transient": {
-							"deleting": false
-						}
-					}
-				},
-				"source": [
-					""
 				],
 				"execution_count": null
 			}
