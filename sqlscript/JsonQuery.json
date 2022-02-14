@@ -1,0 +1,17 @@
+{
+	"name": "JsonQuery",
+	"properties": {
+		"content": {
+			"query": "--query json doc list\nselect top 10 * \nfrom \n    openrowset( \n        bulk 'https://pandemicdatalake.blob.core.windows.net/public/curated/covid-19/ecdc_cases/latest/ecdc_cases.jsonl', \n        format = 'csv', \n        fieldterminator ='0x0b', \n        fieldquote = '0x0b' \n    ) with (doc nvarchar(max)) as rows;\n\n--query json doc\nselect top 10 * \nfrom \n    openrowset( \n        bulk 'https://pandemicdatalake.blob.core.windows.net/public/curated/covid-19/ecdc_cases/latest/ecdc_cases.json', \n        format = 'csv', \n        fieldterminator ='0x0b', \n        fieldquote = '0x0b', \n        rowterminator = '0x0b' --> You need to override rowterminator to read classic JSON \n    ) with (doc nvarchar(max)) as rows;\n\n-- with data source definition\ncreate external data source covid \nwith (location = 'https://pandemicdatalake.blob.core.windows.net/public/curated/covid-19/ecdc_cases');\ngo \n\nselect top 10 * \nfrom \n    openrowset( \n        bulk 'latest/ecdc_cases.jsonl', \n        data_source = 'covid', \n        format = 'csv', \n        fieldterminator ='0x0b', \n        fieldquote = '0x0b' \n    ) with (doc nvarchar(max)) as rows;\ngo \n\nselect top 10 * \nfrom \n    openrowset( \n        bulk 'latest/ecdc_cases.json', \n        data_source = 'covid', \n        format = 'csv', \n        fieldterminator ='0x0b', \n        fieldquote = '0x0b', \n        rowterminator = '0x0b' --> You need to override rowterminator to read classic JSON \n    ) with (doc nvarchar(max)) as rows;    \n\n--parse value in json doc\nselect \n    JSON_VALUE(doc, '$.date_rep') AS date_reported, \n    JSON_VALUE(doc, '$.countries_and_territories') AS country, \n    JSON_VALUE(doc, '$.cases') as cases, \n    doc \nfrom \n    openrowset( \n        bulk 'latest/ecdc_cases.jsonl', \n        data_source = 'covid', \n        format = 'csv', \n        fieldterminator ='0x0b', \n        fieldquote = '0x0b' \n    ) with (doc nvarchar(max)) as rows \norder by JSON_VALUE(doc, '$.geo_id') desc;\n\n--parse value in json doc\nselect * \nfrom \n    openrowset( \n        bulk 'latest/ecdc_cases.jsonl', \n        data_source = 'covid', \n        format = 'csv', \n        fieldterminator ='0x0b', \n        fieldquote = '0x0b' \n    ) with (doc nvarchar(max)) as rows \n    cross apply openjson (doc) \n        with (date_rep datetime2, \n                   cases int, \n                   fatal int '$.deaths', \n                   country varchar(100) '$.countries_and_territories') \nwhere country = 'Serbia' \norder by country, date_rep desc;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "SQLPool02",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
