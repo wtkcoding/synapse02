@@ -1,0 +1,17 @@
+{
+	"name": "ExplainQuery",
+	"properties": {
+		"content": {
+			"query": "--Use explain\n EXPLAIN WITH_RECOMMENDATIONS\n SELECT [state]\n    , [date]\n    , positive\n    , SUM([positive]) OVER(PARTITION BY [state] ORDER BY [date] ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) AS moving_sum_5days\n    , AVG([positive]) OVER(PARTITION BY [state] ORDER BY [date] ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) AS moving_avg_5days\n    , SUM([positive]) OVER(PARTITION BY [state] ORDER BY [date] ROWS UNBOUNDED PRECEDING) AS cum_sum\n    , SUM([positive]) OVER(PARTITION BY [state] ORDER BY [date] ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS running_sum_3days\nfrom dbo.COVID_TRACKING\nORDER BY [state], [date]; ",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "SQLPool01",
+				"poolName": "SQLPool01"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
