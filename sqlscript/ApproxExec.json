@@ -1,0 +1,17 @@
+{
+	"name": "ApproxExec",
+	"properties": {
+		"content": {
+			"query": "SELECT COUNT(DISTINCT [date]) AS CNT\nFROM dbo.COVID_TRACKING;\n\n--faster\nSELECT APPROX_COUNT_DISTINCT([date]) AS CNT\nFROM dbo.COVID_TRACKING;\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "SQLPool02",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
