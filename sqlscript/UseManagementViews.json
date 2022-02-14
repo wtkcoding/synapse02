@@ -1,0 +1,17 @@
+{
+	"name": "UseManagementViews",
+	"properties": {
+		"content": {
+			"query": "-- Other Active Connections\nSELECT * FROM sys.dm_pdw_exec_sessions where status <> 'Closed' and session_id <> session_id();\n\n-- Monitor active queries\nSELECT *\nFROM sys.dm_pdw_exec_requests\nWHERE status not in ('Completed','Failed','Cancelled')\n  AND session_id <> session_id()\nORDER BY submit_time DESC;\n\n-- Find top 10 queries longest running queries\nSELECT TOP 10 *\nFROM sys.dm_pdw_exec_requests\nORDER BY total_elapsed_time DESC;\n\n-- Find running queries\nSELECT *\nFROM sys.dm_pdw_exec_requests\nWHERE [status] = 'Running';\n\n-- Query with Label\nSELECT *\nFROM sys.tables\nOPTION (LABEL = 'My Query')\n;\n\n-- Find a query with the Label 'My Query'\nSELECT  *\nFROM    sys.dm_pdw_exec_requests\nWHERE   [label] = 'My Query';\n\n-- Find the distributed query plan steps for a specific query.\nSELECT * FROM sys.dm_pdw_request_steps\nWHERE request_id = 'QID33'\nORDER BY step_index;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "SQLPool01",
+				"poolName": "SQLPool01"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
